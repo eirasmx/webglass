@@ -1,6 +1,6 @@
 /**
  * webglass.js — Physics-based Liquid Glass for the Web
- * Version 1.0
+ * Version 1.1
  *
  * USAGE
  * ─────
@@ -26,10 +26,6 @@
  *   </style>
  *
  *   <div class="glass">Hello</div>
- *
- * Tokens can also be scoped to a container or a single element via inline style=
- * for quick overrides, but this is not recommended for production — it scatters
- * your visual configuration and makes global changes painful.
  *
  * AVAILABLE TOKENS
  * ────────────────
@@ -75,6 +71,41 @@
   const STATE_BLOCK = 'BLOCK';
   const STATE_OWN   = 'OWN';
 
+  // ─── Feature detection ───────────────────────────────────────────────────────
+  // backdrop-filter: url(#id) is only supported in Chromium desktop.
+  // Mobile Chrome, all Safari/iOS, and Firefox drop the url() part silently.
+  // We detect this once at boot and use the cloned-layer path on all other engines.
+  let _backdropUrlSupported = false;
+
+  function _detectBackdropUrl() {
+    try {
+      // Build a minimal SVG filter in the document
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;';
+      const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+      filter.setAttribute('id', '__wg_detect__');
+      svg.appendChild(filter);
+      document.body.appendChild(svg);
+
+      // Create a probe element and apply backdrop-filter: url(#...)
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:10px;height:10px;backdrop-filter:url(#__wg_detect__);-webkit-backdrop-filter:url(#__wg_detect__);';
+      document.body.appendChild(probe);
+
+      const cs = getComputedStyle(probe);
+      // If the browser accepted the url() reference, it will appear in computed style
+      const bf = cs.backdropFilter || cs.webkitBackdropFilter || '';
+      const supported = bf.includes('url');
+
+      probe.remove();
+      svg.remove();
+      return supported;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ─── Surface profiles ────────────────────────────────────────────────────────
   const Surface = {
     squircle(x) { return Math.pow(Math.max(0, 1 - Math.pow(1 - x, 4)), 0.25); },
     circle(x)   { return Math.sqrt(Math.max(0, 1 - Math.pow(1 - x, 2))); },
@@ -125,6 +156,7 @@
     return { mags, maxMag };
   }
 
+  // ─── SDF helpers ─────────────────────────────────────────────────────────────
   function _rrectSDF(px, py, hw, hh, r) {
     r = Math.min(r, Math.min(hw, hh));
     const qx = Math.abs(px) - hw + r;
@@ -141,6 +173,7 @@
     return { x: gx / len, y: gy / len };
   }
 
+  // ─── Map builders ────────────────────────────────────────────────────────────
   function _buildDisplacementMap(W, H, fn, bezel, refraction, cr) {
     const { mags, maxMag } = _radialDisplacements(fn, bezel, refraction);
     const N = mags.length;
@@ -180,10 +213,7 @@
     return canvas.toDataURL('image/png');
   }
 
-  // Compute specular intensity for one light direction at a given bezel pixel.
-  // t = normalized depth into bezel (0 = outer edge, 1 = inner edge)
   function _specIntensity(t, tilt, outNx, outNy, lx, ly, edge, width) {
-    // Shift + clip the band
     const tEdge = t - edge;
     if (tEdge < 0 || tEdge > width) return 0;
     const bandT = tEdge / width;
@@ -197,7 +227,6 @@
   function _buildSpecularMap(W, H, fn, bezel, angleDeg, strength, width, edge, back, cr) {
     const rad  = (angleDeg * Math.PI) / 180;
     const lx   = Math.cos(rad), ly = Math.sin(rad);
-    // Back highlight is always exactly opposite the main light
     const blx  = -lx, bly = -ly;
 
     const canvas = document.createElement('canvas');
@@ -224,12 +253,9 @@
         const tilt   = Math.abs(localN.x / localLen);
         const outN   = _rrectNormal(cx, cy, hw, hh, cr);
 
-        // Primary highlight
         const Ip = _specIntensity(t, tilt, outN.x, outN.y, lx, ly, edge, width) * strength;
-        // Counter-highlight (opposite side, independent strength, same band geometry)
         const Ib = _specIntensity(t, tilt, outN.x, outN.y, blx, bly, edge, width) * back;
-
-        const I = Math.min(1, Ip + Ib);
+        const I  = Math.min(1, Ip + Ib);
 
         data[idx]   = Math.round(Math.min(255, I * 270));
         data[idx+1] = Math.round(I * 255);
@@ -241,6 +267,7 @@
     return canvas.toDataURL('image/png');
   }
 
+  // ─── SVG filter ──────────────────────────────────────────────────────────────
   const NS = 'http://www.w3.org/2000/svg';
 
   function _svgEl(tag, attrs) {
@@ -259,31 +286,85 @@
       p.lightAngle, p.specularStrength, p.specularWidth, p.specularEdge, p.specularBack,
       p.cornerRadius
     );
-    const f = _svgEl('filter', {
-      id, x: '0%', y: '0%', width: '100%', height: '100%',
-      'color-interpolation-filters': 'sRGB'
-    });
-    f.appendChild(_svgEl('feImage', {
-      href: dispUrl, x: 0, y: 0, width: W, height: H,
-      result: 'wg_disp', preserveAspectRatio: 'none'
-    }));
-    f.appendChild(_svgEl('feDisplacementMap', {
-      in: 'SourceGraphic', in2: 'wg_disp',
-      scale: p.scale,
-      xChannelSelector: 'R', yChannelSelector: 'G',
-      result: 'wg_refracted'
-    }));
-    f.appendChild(_svgEl('feImage', {
-      href: specUrl, x: 0, y: 0, width: W, height: H,
-      result: 'wg_spec', preserveAspectRatio: 'none'
-    }));
-    f.appendChild(_svgEl('feBlend', {
-      in: 'wg_refracted', in2: 'wg_spec',
-      mode: 'screen', result: 'wg_out'
-    }));
-    svg.appendChild(f);
+
+    if (_backdropUrlSupported) {
+      // ── Chromium desktop path ─────────────────────────────────────────────
+      // Full filter: displacement + specular blended together.
+      // Applied via backdrop-filter: blur() url(#id) on the layer div.
+      const f = _svgEl('filter', {
+        id, x: '0%', y: '0%', width: '100%', height: '100%',
+        'color-interpolation-filters': 'sRGB'
+      });
+      f.appendChild(_svgEl('feImage', {
+        href: dispUrl, x: 0, y: 0, width: W, height: H,
+        result: 'wg_disp', preserveAspectRatio: 'none'
+      }));
+      f.appendChild(_svgEl('feDisplacementMap', {
+        in: 'SourceGraphic', in2: 'wg_disp',
+        scale: p.scale,
+        xChannelSelector: 'R', yChannelSelector: 'G',
+        result: 'wg_refracted'
+      }));
+      f.appendChild(_svgEl('feImage', {
+        href: specUrl, x: 0, y: 0, width: W, height: H,
+        result: 'wg_spec', preserveAspectRatio: 'none'
+      }));
+      f.appendChild(_svgEl('feBlend', {
+        in: 'wg_refracted', in2: 'wg_spec',
+        mode: 'screen', result: 'wg_out'
+      }));
+      svg.appendChild(f);
+    } else {
+      // ── Universal path (mobile / Safari / Firefox) ────────────────────────
+      // backdrop-filter: url() is not supported here.
+      // Instead we create two separate SVG filters:
+      //
+      //   id          — displacement only, applied via filter: on a cloned
+      //                 background div. filter: url() has broad support.
+      //   id + '_spec' — specular only (feImage pass-through), composited
+      //                  as a separate absolutely-positioned overlay div.
+      //
+      // The cloned background div (class="wg-bgclone") is sized/positioned to
+      // match the page background and then clipped to the element's bounds,
+      // so feDisplacementMap shifts the right pixels.
+
+      // Displacement-only filter
+      const fDisp = _svgEl('filter', {
+        id, x: '0%', y: '0%', width: '100%', height: '100%',
+        'color-interpolation-filters': 'sRGB'
+      });
+      fDisp.appendChild(_svgEl('feImage', {
+        href: dispUrl, x: 0, y: 0, width: W, height: H,
+        result: 'wg_disp', preserveAspectRatio: 'none'
+      }));
+      fDisp.appendChild(_svgEl('feDisplacementMap', {
+        in: 'SourceGraphic', in2: 'wg_disp',
+        scale: p.scale,
+        xChannelSelector: 'R', yChannelSelector: 'G'
+      }));
+      svg.appendChild(fDisp);
+
+      // Specular-only filter (just renders the specular image as an overlay)
+      const specId = id + '_spec';
+      const oldSpec = svg.getElementById(specId);
+      if (oldSpec) oldSpec.remove();
+      const fSpec = _svgEl('filter', {
+        id: specId, x: '0%', y: '0%', width: '100%', height: '100%',
+        'color-interpolation-filters': 'sRGB'
+      });
+      fSpec.appendChild(_svgEl('feImage', {
+        href: specUrl, x: 0, y: 0, width: W, height: H,
+        result: 'wg_spec', preserveAspectRatio: 'none'
+      }));
+      // feComposite clips the specular image to the element shape
+      fSpec.appendChild(_svgEl('feComposite', {
+        in: 'wg_spec', in2: 'SourceGraphic', operator: 'in'
+      }));
+      svg.appendChild(fSpec);
+    }
   }
 
+  // ─── Runtime state ───────────────────────────────────────────────────────────
   const _rt = {
     svg:         null,
     perEl:       new Map(),
@@ -330,7 +411,6 @@
     function num(name, def) { const v = parseFloat(token(name)); return isNaN(v) ? def : v; }
     function str(name, def) { return token(name) || def; }
 
-    // --wg-refraction is canonical; --wg-ior is a deprecated alias
     const refraction = (() => {
       const v = parseFloat(cs.getPropertyValue('--wg-refraction').trim());
       if (!isNaN(v)) return v;
@@ -407,32 +487,140 @@
     ].join('|');
   }
 
+  // ─── Layer application ───────────────────────────────────────────────────────
+
   function _applyLayer(el, filterId, p) {
     if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
     if (!el.style.isolation) el.style.isolation = 'isolate';
-    let layer = el.querySelector(':scope > .wg-layer');
-    if (!layer) {
-      layer = document.createElement('div');
-      layer.className = 'wg-layer';
-      layer.setAttribute('aria-hidden', 'true');
-      el.insertBefore(layer, el.firstChild);
+
+    if (_backdropUrlSupported) {
+      // ── Chromium desktop path ─────────────────────────────────────────────
+      // Single layer: backdrop-filter: blur() url(#filterId)
+      let layer = el.querySelector(':scope > .wg-layer');
+      if (!layer) {
+        layer = document.createElement('div');
+        layer.className = 'wg-layer';
+        layer.setAttribute('aria-hidden', 'true');
+        el.insertBefore(layer, el.firstChild);
+      }
+      const bf = filterId
+        ? `blur(${p.blur}px) url(#${filterId})`
+        : `blur(${p.blur}px)`;
+      layer.style.cssText = [
+        'position:absolute', 'inset:0', 'border-radius:inherit',
+        `backdrop-filter:${bf}`,
+        `-webkit-backdrop-filter:${bf}`,
+        `background:rgba(255,255,255,${p.bgOpacity})`,
+        'pointer-events:none', 'z-index:-1'
+      ].join(';');
+
+      // Remove universal-path layers if any
+      el.querySelector(':scope > .wg-bgclone')?.remove();
+      el.querySelector(':scope > .wg-spec')?.remove();
+
+    } else {
+      // ── Universal path (mobile / Safari / Firefox) ────────────────────────
+      //
+      // Layer stack inside the glass element (back → front):
+      //
+      //   .wg-bgclone   Frozen copy of the page background behind this element,
+      //                 filtered with filter: blur() url(#dispFilterId).
+      //                 This achieves refraction without backdrop-filter: url().
+      //
+      //   .wg-layer     backdrop-filter: blur() only (no url()).
+      //                 Adds the frosted glass tint/blur that the bgclone can't.
+      //                 Some browsers apply blur to what's literally behind the
+      //                 element in the stacking context, so this still works.
+      //
+      //   .wg-spec      Specular highlight overlay.
+      //                 filter: url(#specFilterId) on a transparent div.
+
+      // --- .wg-bgclone: displaced background clone ---
+      let bgClone = el.querySelector(':scope > .wg-bgclone');
+      if (!bgClone) {
+        bgClone = document.createElement('div');
+        bgClone.className = 'wg-bgclone';
+        bgClone.setAttribute('aria-hidden', 'true');
+        el.insertBefore(bgClone, el.firstChild);
+      }
+
+      // Position the clone to cover exactly the element's bounding box
+      // relative to the page, so the background-* properties line up.
+      const rect = el.getBoundingClientRect();
+      const scrollX = window.scrollX || window.pageXOffset;
+      const scrollY = window.scrollY || window.pageYOffset;
+      const absTop  = rect.top  + scrollY;
+      const absLeft = rect.left + scrollX;
+
+      // Inherit the background from <body> or the nearest opaque ancestor.
+      // We use a negative offset background-position so it looks like a window
+      // cut into the page background.
+      const bodyStyle = getComputedStyle(document.body);
+      const bgImage  = bodyStyle.backgroundImage;
+      const bgColor  = bodyStyle.backgroundColor;
+      const bgSize   = bodyStyle.backgroundSize;
+      const bgRepeat = bodyStyle.backgroundRepeat;
+      const bgAttach = bodyStyle.backgroundAttachment;
+
+      const dispFilter = filterId ? `blur(${p.blur}px) url(#${filterId})` : `blur(${p.blur}px)`;
+
+      bgClone.style.cssText = [
+        'position:absolute', 'inset:0', 'border-radius:inherit',
+        `background-image:${bgImage}`,
+        `background-color:${bgColor}`,
+        `background-size:${bgSize === 'auto' ? 'auto' : bgSize}`,
+        `background-repeat:${bgRepeat}`,
+        // Shift the background so it aligns with the real page background
+        `background-position:-${absLeft}px -${absTop}px`,
+        `background-attachment:${bgAttach === 'fixed' ? 'fixed' : 'scroll'}`,
+        `filter:${dispFilter}`,
+        'pointer-events:none', 'z-index:-2'
+      ].join(';');
+
+      // --- .wg-layer: blur + tint ---
+      let layer = el.querySelector(':scope > .wg-layer');
+      if (!layer) {
+        layer = document.createElement('div');
+        layer.className = 'wg-layer';
+        layer.setAttribute('aria-hidden', 'true');
+        el.insertBefore(layer, bgClone.nextSibling);
+      }
+      const blurFilter = `blur(${p.blur}px)`;
+      layer.style.cssText = [
+        'position:absolute', 'inset:0', 'border-radius:inherit',
+        `backdrop-filter:${blurFilter}`,
+        `-webkit-backdrop-filter:${blurFilter}`,
+        `background:rgba(255,255,255,${p.bgOpacity})`,
+        'pointer-events:none', 'z-index:-1'
+      ].join(';');
+
+      // --- .wg-spec: specular overlay ---
+      if (filterId) {
+        let specLayer = el.querySelector(':scope > .wg-spec');
+        if (!specLayer) {
+          specLayer = document.createElement('div');
+          specLayer.className = 'wg-spec';
+          specLayer.setAttribute('aria-hidden', 'true');
+          el.appendChild(specLayer);
+        }
+        specLayer.style.cssText = [
+          'position:absolute', 'inset:0', 'border-radius:inherit',
+          `filter:url(#${filterId}_spec)`,
+          'pointer-events:none', 'z-index:1'
+        ].join(';');
+      } else {
+        el.querySelector(':scope > .wg-spec')?.remove();
+      }
     }
-    const bf = filterId
-      ? `blur(${p.blur}px) url(#${filterId})`
-      : `blur(${p.blur}px)`;
-    layer.style.cssText = [
-      'position:absolute', 'inset:0', 'border-radius:inherit',
-      `backdrop-filter:${bf}`,
-      `-webkit-backdrop-filter:${bf}`,
-      `background:rgba(255,255,255,${p.bgOpacity})`,
-      'pointer-events:none', 'z-index:-1'
-    ].join(';');
   }
 
   function _removeLayer(el) {
     el.querySelector(':scope > .wg-layer')?.remove();
+    el.querySelector(':scope > .wg-bgclone')?.remove();
+    el.querySelector(':scope > .wg-spec')?.remove();
   }
 
+  // ─── Processing ──────────────────────────────────────────────────────────────
   function _processOwn(el) {
     const rect = el.getBoundingClientRect();
     const W = Math.round(rect.width);
@@ -497,6 +685,7 @@
     return el.classList?.contains('glass') || el.hasAttribute?.('data-wg-glass');
   }
 
+  // ─── Observers ───────────────────────────────────────────────────────────────
   function _startObservers() {
     if (_rt.mo) return;
     _rt.mo = new MutationObserver(muts => {
@@ -558,6 +747,14 @@
     }, 150);
   }, { passive: true });
 
+  // On scroll, bgclone positions need to be recalculated in the universal path
+  window.addEventListener('scroll', () => {
+    if (_backdropUrlSupported) return;
+    _rt.perEl.clear();
+    _scan();
+  }, { passive: true });
+
+  // ─── Public API ──────────────────────────────────────────────────────────────
   const WebGlass = {
     apply(el, opts = {}) {
       const propMap = {
@@ -599,9 +796,9 @@
       _rt.rootMo?.disconnect(); _rt.rootMo = null;
       _rt.ro?.disconnect();     _rt.ro     = null;
       if (_rt.rafId) { cancelAnimationFrame(_rt.rafId); _rt.rafId = null; }
-      document.querySelectorAll('.wg-layer').forEach(l => l.remove());
+      document.querySelectorAll('.wg-layer, .wg-bgclone, .wg-spec').forEach(l => l.remove());
       if (_rt.svg?.isConnected) _rt.svg.remove();
-      _rt.svg         = null;
+      _rt.svg = null;
       _rt.perEl.clear();
       _rt.filterMap.clear();
     },
@@ -609,8 +806,11 @@
     _rt
   };
 
+  // ─── Boot ────────────────────────────────────────────────────────────────────
   function _boot() {
     _ensureSVG();
+    // Run feature detection before first render
+    _backdropUrlSupported = _detectBackdropUrl();
     requestAnimationFrame(() => requestAnimationFrame(() => {
       _scan();
       _startObservers();
