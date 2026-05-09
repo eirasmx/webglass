@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGlass — Liquid Glass for the Web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400&family=Instrument+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="webglass.css">
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="bg-text">glass</div>
+
+  <div class="hero-content">
+    <p class="hero-eyebrow">webglass.js — v1.0</p>
+    <h1 class="hero-title"><em>Liquid Glass</em><br>for the Web</h1>
+    <p class="hero-sub">
+      Snell–Descartes refraction, SDF-accurate bezels, and specular rim lighting —
+      rendered entirely in CSS backdrop-filter and SVG, zero canvas at runtime.
+    </p>
+
+    <!-- Glass pills -->
+    <div class="hero-glass-row">
+      <div style="--wg-shape:squircle;--wg-bezel:0.32;--wg-scale:36;--wg-blur:8" class="glass hero-pill">
+        <span class="dot"></span>
+        <span>Squircle</span>
+      </div>
+      <div style="--wg-shape:circle;--wg-bezel:0.3;--wg-scale:38;--wg-blur:8" class="glass hero-pill">
+        <span class="dot"></span>
+        <span>Spherical</span>
+      </div>
+      <div style="--wg-shape:lip;--wg-bezel:0.35;--wg-scale:42;--wg-blur:8" class="glass hero-pill">
+        <span class="dot"></span>
+        <span>Lip</span>
+      </div>
+      <div style="--wg-shape:concave;--wg-bezel:0.28;--wg-scale:34;--wg-blur:8" class="glass hero-pill">
+        <span class="dot"></span>
+        <span>Concave</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ── SHAPES ────────────────────────────────────────────────── -->
+<section class="shapes-section">
+  <div class="shapes-bg"></div>
+  <div class="max-w">
+    <span class="section-label">Surface Profiles</span>
+    <h2 class="section-title">Four glass geometries,<br>one physics engine</h2>
+    <p class="section-body">
+      Each shape uses a distinct surface profile function. Normals are derived numerically,
+      fed to Snell's law, then encoded into SVG displacement maps matching the element's
+      exact <code>border-radius</code>.
+    </p>
+
+    <div class="shapes-grid">
+
+      <div class="shape-card">
+        <div class="shape-demo">
+          <div style="--wg-render:true;--wg-shape:squircle;--wg-bezel:0.30;--wg-scale:44;--wg-blur:8;--wg-bg-opacity:0.08" class="shape-el is-squircle glass">
+            <span class="shape-icon">◈</span>
+          </div>
+        </div>
+        <span class="shape-name">Squircle</span>
+        <p class="shape-desc">Apple-preferred ⁴√ profile. Smooth continuous curvature from edge to flat centre.</p>
+      </div>
+
+      <div class="shape-card">
+        <div class="shape-demo">
+          <div style="--wg-render:true;--wg-shape:circle;--wg-bezel:0.30;--wg-scale:44;--wg-blur:8;--wg-bg-opacity:0.08" class="shape-el is-circle glass">
+            <span class="shape-icon">◯</span>
+          </div>
+        </div>
+        <span class="shape-name">Spherical</span>
+        <p class="shape-desc">Dome lens. √ profile produces maximum central refraction for circular elements.</p>
+      </div>
+
+      <div class="shape-card">
+        <div class="shape-demo">
+          <div style="--wg-render:true;--wg-shape:lip;--wg-bezel:0.32;--wg-scale:44;--wg-blur:8;--wg-bg-opacity:0.08" class="shape-el is-lip glass">
+            <span class="shape-icon">◇</span>
+          </div>
+        </div>
+        <span class="shape-name">Lip</span>
+        <p class="shape-desc">Raised rim with a shallow interior dip. Mixes convex and concave using smootherstep.</p>
+      </div>
+
+      <div class="shape-card">
+        <div class="shape-demo">
+          <div style="--wg-render:true;--wg-shape:concave;--wg-bezel:0.30;--wg-scale:38;--wg-blur:8;--wg-bg-opacity:0.08" class="shape-el is-concave glass">
+            <span class="shape-icon">◉</span>
+          </div>
+        </div>
+        <span class="shape-name">Concave</span>
+        <p class="shape-desc">Inverted squircle. Refracts outward, simulating a depression in optical glass.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── INTERACTIVE ───────────────────────────────────────────── -->
+<section class="panel-section">
+  <div class="panel-bg"></div>
+  <div class="max-w">
+    <div class="panel-layout">
+      <div>
+        <span class="section-label">Live Controls</span>
+        <h2 class="section-title">Tune every<br>optical parameter</h2>
+        <p class="section-body">
+          Adjust refraction, bezel width, displacement scale, blur, and specular controls in real time.
+          WebGlass rebuilds the filter graph and re-applies without page reload.
+        </p>
+
+        <div class="panel-controls">
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Shape</span>
+            </div>
+            <div class="ctrl-chips">
+              <button class="chip active" onclick="setShape('squircle',this)">Squircle</button>
+              <button class="chip" onclick="setShape('circle',this)">Circle</button>
+              <button class="chip" onclick="setShape('lip',this)">Lip</button>
+              <button class="chip" onclick="setShape('concave',this)">Concave</button>
+            </div>
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Refraction</span>
+              <span class="ctrl-val" id="v-refraction">1.45</span>
+            </div>
+            <input type="range" id="r-refraction" min="1.0" max="2.2" step="0.01" value="1.45" oninput="updateGlass()">
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Bezel width</span>
+              <span class="ctrl-val" id="v-bezel">0.28</span>
+            </div>
+            <input type="range" id="r-bezel" min="0.05" max="0.55" step="0.01" value="0.28" oninput="updateGlass()">
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Displacement scale</span>
+              <span class="ctrl-val" id="v-scale">96</span>
+            </div>
+            <input type="range" id="r-scale" min="5" max="120" step="1" value="96" oninput="updateGlass()">
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Blur (px)</span>
+              <span class="ctrl-val" id="v-blur">0</span>
+            </div>
+            <input type="range" id="r-blur" min="0" max="30" step="0.5" value="0" oninput="updateGlass()">
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Light angle (°)</span>
+              <span class="ctrl-val" id="v-angle">-55</span>
+            </div>
+            <input type="range" id="r-angle" min="-180" max="180" step="1" value="-55" oninput="updateGlass()">
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Specular strength</span>
+              <span class="ctrl-val" id="v-strength">0.45</span>
+            </div>
+            <input type="range" id="r-strength" min="0" max="1" step="0.01" value="0.45" oninput="updateGlass()">
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Specular width</span>
+              <span class="ctrl-val" id="v-specwidth">1.00</span>
+            </div>
+            <input type="range" id="r-specwidth" min="0.01" max="1" step="0.01" value="1.00" oninput="updateGlass()">
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Specular edge</span>
+              <span class="ctrl-val" id="v-specedge">0.00</span>
+            </div>
+            <input type="range" id="r-specedge" min="0" max="0.8" step="0.01" value="0.00" oninput="updateGlass()">
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Counter-highlight</span>
+              <span class="ctrl-val" id="v-specback">0.50</span>
+            </div>
+            <input type="range" id="r-specback" min="0" max="1" step="0.01" value="0.50" oninput="updateGlass()">
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Border radius (px)</span>
+              <span class="ctrl-val" id="v-radius">98</span>
+            </div>
+            <input type="range" id="r-radius" min="0" max="100" step="1" value="98" oninput="updateGlass()">
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Width (px)</span>
+              <span class="ctrl-val" id="v-width">200</span>
+            </div>
+            <input type="range" id="r-width" min="60" max="360" step="2" value="200" oninput="updateGlass()">
+          </div>
+
+          <div class="ctrl-group">
+            <div class="ctrl-label">
+              <span>Height (px)</span>
+              <span class="ctrl-val" id="v-height">200</span>
+            </div>
+            <input type="range" id="r-height" min="40" max="360" step="2" value="200" oninput="updateGlass()">
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="panel-preview">
+        <div class="preview-content">
+          <div class="preview-blob"></div>
+          <div class="preview-blob"></div>
+          <div class="preview-blob"></div>
+          <div class="preview-stripes"></div>
+        </div>
+
+        <div style="--wg-render:true;--wg-shape:squircle;--wg-refraction:1.45;--wg-bezel:0.28;--wg-scale:96;--wg-blur:0;--wg-light-angle:-55;--wg-specular-strength:0.45;--wg-specular-width:1.00;--wg-specular-edge:0.00;--wg-specular-back:0.50;--wg-bg-opacity:0.12" id="live-glass" class="glass">
+          <span class="glass-icon">⬡</span>
+          <span class="glass-label">Drag me</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── CARDS ─────────────────────────────────────────────────── -->
+<section class="cards-section">
+  <div class="cards-bg"></div>
+  <div class="cards-layout">
+    <div class="cards-header">
+      <span class="section-label">Compositing</span>
+      <h2 class="section-title">Glass over anything</h2>
+      <p class="section-body">
+        The glass layer is absolutely positioned inside the element, leaving
+        your actual content untouched and fully interactive.
+      </p>
+    </div>
+
+    <div class="cards-row">
+
+      <div class="card-wrap">
+        <div class="card-bg card-bg-1">
+          <div class="card-shape"></div>
+          <div class="card-text-bg">Snell</div>
+        </div>
+        <div style="--wg-render:true;--wg-shape:squircle;--wg-bezel:0.30;--wg-scale:45;--wg-blur:12;--wg-specular-strength:0.7;--wg-bg-opacity:0.1" class="card-glass glass">
+          <div class="card-glass-title">Refraction</div>
+          <div class="card-glass-sub">Snell–Descartes law computed per-pixel with numerical surface normals</div>
+          <span class="card-badge">n₁·sinθ₁ = n₂·sinθ₂</span>
+        </div>
+      </div>
+
+      <div class="card-wrap">
+        <div class="card-bg card-bg-2">
+          <div class="card-shape"></div>
+          <div class="card-text-bg">SDF</div>
+        </div>
+        <div style="--wg-render:true;--wg-shape:lip;--wg-bezel:0.32;--wg-scale:42;--wg-blur:12;--wg-light-angle:-30;--wg-specular-strength:0.8;--wg-bg-opacity:0.1" class="card-glass glass">
+          <div class="card-glass-title">SDF Bezel</div>
+          <div class="card-glass-sub">Rounded-rect signed distance field follows the real border-radius exactly</div>
+          <span class="card-badge">rrectSDF</span>
+        </div>
+      </div>
+
+      <div class="card-wrap">
+        <div class="card-bg card-bg-3">
+          <div class="card-shape"></div>
+          <div class="card-text-bg">Spec</div>
+        </div>
+        <div style="--wg-render:true;--wg-shape:circle;--wg-bezel:0.28;--wg-scale:48;--wg-blur:12;--wg-light-angle:-90;--wg-specular-strength:0.85;--wg-specular-width:0.15;--wg-specular-edge:0;--wg-specular-back:0.15;--wg-bg-opacity:0.1" class="card-glass glass">
+          <div class="card-glass-title">Specular</div>
+          <div class="card-glass-sub">Rim highlight from dot(world_normal, light)³ faded at both bezel edges</div>
+          <span class="card-badge">feBlend screen</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ── CODE ──────────────────────────────────────────────────── -->
+<section class="code-section">
+  <div class="code-bg"></div>
+  <div class="code-layout">
+    <div class="code-header">
+      <span class="section-label">Usage</span>
+      <h2 class="section-title">CSS-first, opt-in</h2>
+      <p class="section-body">Glass is off by default. Enable it with <code>--wg-render: true</code> &mdash; set it on <code>:root</code>, a container, or a specific element. Everything else is CSS custom properties.</p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-titlebar">
+        <div class="code-dot red"></div>
+        <div class="code-dot amber"></div>
+        <div class="code-dot green"></div>
+        <span class="code-filename">styles.css</span>
+      </div>
+      <pre><span class="tok-comment">/* 1. Enable glass sitewide */</span>
+<span class="tok-kw">:root</span> {
+  <span class="tok-attr">--wg-render</span>:             <span class="tok-str">true</span>;
+  <span class="tok-attr">--wg-shape</span>:              <span class="tok-str">squircle</span>;
+  <span class="tok-attr">--wg-refraction</span>:         <span class="tok-num">1.45</span>;
+  <span class="tok-attr">--wg-bezel</span>:              <span class="tok-num">0.28</span>;
+  <span class="tok-attr">--wg-scale</span>:              <span class="tok-num">40</span>;
+  <span class="tok-attr">--wg-blur</span>:               <span class="tok-num">10</span>;
+  <span class="tok-attr">--wg-light-angle</span>:        <span class="tok-num">-55</span>;
+  <span class="tok-attr">--wg-specular-strength</span>:  <span class="tok-num">0.65</span>;
+  <span class="tok-attr">--wg-specular-width</span>:     <span class="tok-num">0.25</span>;
+  <span class="tok-attr">--wg-specular-edge</span>:      <span class="tok-num">0.05</span>;
+  <span class="tok-attr">--wg-specular-back</span>:      <span class="tok-num">0.20</span>;
+  <span class="tok-attr">--wg-bg-opacity</span>:         <span class="tok-num">0.15</span>;
+}
+
+<span class="tok-comment">/* 2. iOS tight-rim look */</span>
+<span class="tok-kw">.ios-style</span> {
+  <span class="tok-attr">--wg-specular-edge</span>:   <span class="tok-num">0</span>;
+  <span class="tok-attr">--wg-specular-width</span>:  <span class="tok-num">0.15</span>;
+  <span class="tok-attr">--wg-specular-back</span>:   <span class="tok-num">0.15</span>;
+}
+
+<span class="tok-comment">/* 3. Soft glow look */</span>
+<span class="tok-kw">.glow-style</span> {
+  <span class="tok-attr">--wg-specular-edge</span>:   <span class="tok-num">0.3</span>;
+  <span class="tok-attr">--wg-specular-width</span>:  <span class="tok-num">0.6</span>;
+  <span class="tok-attr">--wg-specular-back</span>:   <span class="tok-num">0</span>;
+}</pre>
+    </div>
+
+    <div class="code-block" style="margin-top:1.5rem;">
+      <div class="code-titlebar">
+        <div class="code-dot red"></div>
+        <div class="code-dot amber"></div>
+        <div class="code-dot green"></div>
+        <span class="code-filename">index.html</span>
+      </div>
+      <pre><span class="tok-comment">&lt;!-- Include stylesheet + script --&gt;</span>
+<span class="tok-tag">&lt;link</span> <span class="tok-attr">rel</span>=<span class="tok-val">"stylesheet"</span> <span class="tok-attr">href</span>=<span class="tok-val">"webglass.css"</span><span class="tok-tag">&gt;</span>
+<span class="tok-tag">&lt;script</span> <span class="tok-attr">src</span>=<span class="tok-val">"webglass.js"</span><span class="tok-tag">&gt;&lt;/script&gt;</span>
+
+<span class="tok-comment">&lt;!-- Add class="glass" &mdash; inactive until --wg-render:true cascades in --&gt;</span>
+<span class="tok-tag">&lt;div</span> <span class="tok-attr">class</span>=<span class="tok-val">"glass card-glass"</span><span class="tok-tag">&gt;</span>Content<span class="tok-tag">&lt;/div&gt;</span>
+
+<span class="tok-comment">&lt;!-- JS API: programmatic enable + tune (writes CSS custom props) --&gt;</span>
+<span class="tok-tag">&lt;script&gt;</span>
+  <span class="tok-fn">WebGlass</span>.<span class="tok-fn">apply</span>(el, {
+    render: <span class="tok-str">'true'</span>, shape: <span class="tok-str">'circle'</span>,
+    refraction: <span class="tok-num">1.8</span>, lightAngle: <span class="tok-num">-90</span>,
+    specularStrength: <span class="tok-num">0.7</span>, specularWidth: <span class="tok-num">0.15</span>,
+    specularEdge: <span class="tok-num">0</span>, specularBack: <span class="tok-num">0.15</span>
+  });
+  <span class="tok-fn">WebGlass</span>.<span class="tok-fn">configure</span>({ lightAngle: <span class="tok-num">-90</span>, bgOpacity: <span class="tok-num">0.2</span> });
+  <span class="tok-fn">WebGlass</span>.<span class="tok-fn">refresh</span>();
+<span class="tok-tag">&lt;/script&gt;</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ── PHYSICS ────────────────────────────────────────────────── -->
+<section class="physics-section">
+  <div class="physics-bg"></div>
+  <div class="physics-layout">
+    <span class="section-label">Under the hood</span>
+    <h2 class="section-title">Real physics,<br>not a fake blur</h2>
+    <p class="section-body">
+      Every visual property is derived from first principles. No lookup tables, no texture hacks.
+    </p>
+
+    <div class="physics-grid">
+
+      <div class="physics-cell">
+        <div class="physics-num">01</div>
+        <div class="physics-formula">n₁·sinθ₁ = n₂·sinθ₂</div>
+        <div class="physics-name">Snell–Descartes</div>
+        <p class="physics-desc">Refraction angle computed for each surface normal. Lateral displacement encodes the bent ray's x-component.</p>
+      </div>
+
+      <div class="physics-cell">
+        <div class="physics-num">02</div>
+        <div class="physics-formula">d/dx · SDF = ∇n̂</div>
+        <div class="physics-name">SDF Normals</div>
+        <p class="physics-desc">Rounded-rect signed distance field provides pixel-accurate outward normals that match the element's actual border-radius.</p>
+      </div>
+
+      <div class="physics-cell">
+        <div class="physics-num">03</div>
+        <div class="physics-formula">y = ⁴√(1−(1−x)⁴)</div>
+        <div class="physics-name">Squircle Profile</div>
+        <p class="physics-desc">Apple's preferred lens surface. Continuous fourth-power curvature yields the characteristic smooth-to-flat bezel transition.</p>
+      </div>
+
+      <div class="physics-cell">
+        <div class="physics-num">04</div>
+        <div class="physics-formula">max(dot(n̂,l̂),0)³</div>
+        <div class="physics-name">Specular Highlight</div>
+        <p class="physics-desc">Blinn–Phong-style rim light. World normal from SDF gradient × surface tilt, blended via feBlend screen mode. Counter-highlight at lightAngle + 180°.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ──────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-bg"></div>
+  <div class="footer-logo">WebGlass</div>
+  <div class="footer-links">
+    <a href="https://github.com/eirasmx/webglass">GitHub</a>
+    <a href="https://github.com/eirasmx/webglass/docs">Docs</a>
+    <a href="https://github.com/eirasmx/webglass/examples">Examples</a>
+    <a href="https://github.com/eirasmx/webglass/changelog">Changelog</a>
+  </div>
+  <p class="footer-copy">webglass.js — Liquid Glass for the Web</p>
+</footer>
+
+<div id="drag-hint">Drag the glass panel</div>
+
+<script src="webglass.js"></script>
+<script>
+  /* ── Interactive controls ── */
+  let currentShape = 'squircle';
+  const el = document.getElementById('live-glass');
+
+  function updateGlass() {
+    const refraction = document.getElementById('r-refraction').value;
+    const bezel      = document.getElementById('r-bezel').value;
+    const scale      = document.getElementById('r-scale').value;
+    const blur       = document.getElementById('r-blur').value;
+    const angle      = document.getElementById('r-angle').value;
+    const strength   = document.getElementById('r-strength').value;
+    const specwidth  = document.getElementById('r-specwidth').value;
+    const specedge   = document.getElementById('r-specedge').value;
+    const specback   = document.getElementById('r-specback').value;
+    const radius     = document.getElementById('r-radius').value;
+    const width      = document.getElementById('r-width').value;
+    const height     = document.getElementById('r-height').value;
+
+    document.getElementById('v-refraction').textContent = parseFloat(refraction).toFixed(2);
+    document.getElementById('v-bezel').textContent      = parseFloat(bezel).toFixed(2);
+    document.getElementById('v-scale').textContent      = scale;
+    document.getElementById('v-blur').textContent       = parseFloat(blur).toFixed(1);
+    document.getElementById('v-angle').textContent      = angle;
+    document.getElementById('v-strength').textContent   = parseFloat(strength).toFixed(2);
+    document.getElementById('v-specwidth').textContent  = parseFloat(specwidth).toFixed(2);
+    document.getElementById('v-specedge').textContent   = parseFloat(specedge).toFixed(2);
+    document.getElementById('v-specback').textContent   = parseFloat(specback).toFixed(2);
+    document.getElementById('v-radius').textContent     = radius + 'px';
+    document.getElementById('v-width').textContent      = width + 'px';
+    document.getElementById('v-height').textContent     = height + 'px';
+
+    el.style.width        = width  + 'px';
+    el.style.height       = height + 'px';
+    el.style.borderRadius = radius + 'px';
+
+    const preview = el.parentElement;
+    const minH = Math.max(460, parseInt(height) + 120);
+    preview.style.minHeight = minH + 'px';
+
+    WebGlass.apply(el, {
+      shape:            currentShape,
+      refraction:       parseFloat(refraction),
+      bezel:            parseFloat(bezel),
+      scale:            parseInt(scale),
+      blur:             parseFloat(blur),
+      lightAngle:       parseInt(angle),
+      specularStrength: parseFloat(strength),
+      specularWidth:    parseFloat(specwidth),
+      specularEdge:     parseFloat(specedge),
+      specularBack:     parseFloat(specback),
+      bgOpacity:        0.12
+    });
+  }
+
+  function setShape(shape, btn) {
+    currentShape = shape;
+    document.querySelectorAll('.ctrl-chips .chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    updateGlass();
+  }
+
+  /* ── Drag on preview ── */
+  let dragging = false, ox = 0, oy = 0;
+  const hint = document.getElementById('drag-hint');
+
+  el.addEventListener('mousedown', e => {
+    dragging = true;
+    const preview = el.parentElement.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    // Capture pointer offset relative to the element's current center in preview space
+    ox = e.clientX - (er.left + er.width / 2 - preview.left);
+    oy = e.clientY - (er.top  + er.height / 2 - preview.top);
+    // Switch from transform-based centering to explicit left/top so moves are clean
+    el.style.left      = (er.left + er.width  / 2 - preview.left) + 'px';
+    el.style.top       = (er.top  + er.height / 2 - preview.top)  + 'px';
+    el.style.transform = 'translate(-50%, -50%)';
+    el.style.transition = 'none';
+    hint.classList.remove('show');
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const preview = el.parentElement.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const hw = er.width / 2, hh = er.height / 2;
+    let cx = e.clientX - ox;
+    let cy = e.clientY - oy;
+    cx = Math.max(hw + 4, Math.min(preview.width  - hw - 4, cx));
+    cy = Math.max(hh + 4, Math.min(preview.height - hh - 4, cy));
+    el.style.left = cx + 'px';
+    el.style.top  = cy + 'px';
+  });
+
+  window.addEventListener('mouseup', () => { if (dragging) dragging = false; });
+
+  /* Touch drag */
+  el.addEventListener('touchstart', e => {
+    dragging = true;
+    const t = e.touches[0];
+    const preview = el.parentElement.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    ox = t.clientX - (er.left + er.width  / 2 - preview.left);
+    oy = t.clientY - (er.top  + er.height / 2 - preview.top);
+    el.style.left      = (er.left + er.width  / 2 - preview.left) + 'px';
+    el.style.top       = (er.top  + er.height / 2 - preview.top)  + 'px';
+    el.style.transform = 'translate(-50%, -50%)';
+    el.style.transition = 'none';
+    e.preventDefault();
+  }, { passive: false });
+
+  window.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    const preview = el.parentElement.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const hw = er.width / 2, hh = er.height / 2;
+    let cx = t.clientX - ox;
+    let cy = t.clientY - oy;
+    cx = Math.max(hw + 4, Math.min(preview.width  - hw - 4, cx));
+    cy = Math.max(hh + 4, Math.min(preview.height - hh - 4, cy));
+    el.style.left = cx + 'px';
+    el.style.top  = cy + 'px';
+    e.preventDefault();
+  }, { passive: false });
+
+  window.addEventListener('touchend', () => { dragging = false; });
+
+  /* Show drag hint briefly after load */
+  setTimeout(() => {
+    hint.classList.add('show');
+    setTimeout(() => hint.classList.remove('show'), 3000);
+  }, 1800);
+</script>
+
+</body>
+</html>
