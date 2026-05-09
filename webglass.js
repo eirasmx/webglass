@@ -63,11 +63,11 @@
     refraction:       1.45,
     bezel:            0.28,
     scale:            40,
-    blur:             10,
+    blur:             0,
     lightAngle:       -55,
     specularStrength: 0.65,
-    specularWidth:    0.25,
-    specularEdge:     0.05,
+    specularWidth:    0.1,
+    specularEdge:     0,
     specularBack:     0.20,
     bgOpacity:        0.15
   };
