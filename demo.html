@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebGlass — Live Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #070710;
+    --surface: rgba(255,255,255,0.03);
+    --border:  rgba(255,255,255,0.06);
+    --text:    #e8e8f0;
+    --muted:   rgba(232,232,240,0.45);
+    --accent:  #7b6cff;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 18px;
+    line-height: 1.65;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Orb background ─────────────────────────────────────────────────────── */
+  .scene {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.55;
+    animation: drift 18s ease-in-out infinite alternate;
+  }
+  .orb-1 { width: 520px; height: 520px; background: radial-gradient(circle, #ff6b6b, #ff2d2d00); top: -80px;  left: -120px; animation-duration: 17s; }
+  .orb-2 { width: 480px; height: 480px; background: radial-gradient(circle, #4ecdc4, #4ecdc400); top: 30%;    right: -80px; animation-duration: 22s; animation-delay: -4s; }
+  .orb-3 { width: 600px; height: 600px; background: radial-gradient(circle, #7b6cff, #7b6cff00); top: 55%;    left: 20%;   animation-duration: 19s; animation-delay: -9s; }
+  .orb-4 { width: 380px; height: 380px; background: radial-gradient(circle, #ffd93d, #ffd93d00); bottom: -60px; right: 15%;  animation-duration: 24s; animation-delay: -2s; }
+  .orb-5 { width: 300px; height: 300px; background: radial-gradient(circle, #ff8fab, #ff8fab00); top: 70%;    left: -40px; animation-duration: 20s; animation-delay: -6s; }
+
+  @keyframes drift {
+    0%   { transform: translate(0px, 0px) scale(1); }
+    33%  { transform: translate(30px, -20px) scale(1.05); }
+    66%  { transform: translate(-20px, 30px) scale(0.95); }
+    100% { transform: translate(15px, -10px) scale(1.08); }
+  }
+
+  /* ── Grid texture overlay ───────────────────────────────────────────────── */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* ── Content ─────────────────────────────────────────────────────────────── */
+  .content {
+    position: relative;
+    z-index: 2;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px 120px;
+  }
+
+  /* ── Hero ───────────────────────────────────────────────────────────────── */
+  .hero {
+    padding: 120px 0 80px;
+    text-align: center;
+  }
+  .hero-eyebrow {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(52px, 8vw, 108px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 32px;
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-title em {
+    font-style: normal;
+    background: linear-gradient(135deg, #ff6b6b, #ffd93d, #4ecdc4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    font-size: 20px;
+    color: var(--muted);
+    max-width: 500px;
+    margin: 0 auto 60px;
+    font-weight: 300;
+    font-style: italic;
+  }
+
+  /* ── Glass panels hero row ───────────────────────────────────────────────── */
+  .glass-row {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 0 auto 100px;
+  }
+
+  /* Glass cards — these get the webglass effect */
+  .glass-card {
+    --wg-render: true;
+    --wg-shape: squircle;
+    --wg-refraction: 1.5;
+    --wg-scale: 0.22;
+    --wg-bezel: 0.28;
+    --wg-blur: 0.003;
+    --wg-corner-radius: 0.18;
+    --wg-fresnel: 0.65;
+    --wg-light-angle: -50;
+    --wg-specular-strength: 0.70;
+    --wg-specular-width: 0.20;
+    --wg-specular-edge: 0.04;
+    --wg-specular-back: 0.20;
+    --wg-bg-opacity: 0.10;
+    --wg-capture-interval: 200;
+
+    width: 220px;
+    height: 260px;
+    border-radius: 28px;
+    border: 1px solid rgba(255,255,255,0.10);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    cursor: default;
+    transition: transform 0.3s cubic-bezier(.22,1,.36,1),
+                border-color 0.3s;
+  }
+  .glass-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    border-color: rgba(255,255,255,0.18);
+  }
+
+  .glass-card.circle-shape {
+    --wg-shape: circle;
+    --wg-corner-radius: 0.5;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+  }
+  .glass-card.concave-shape {
+    --wg-shape: concave;
+  }
+  .glass-card.pill-shape {
+    --wg-shape: squircle;
+    --wg-corner-radius: 0.5;
+    width: 300px;
+    height: 80px;
+    border-radius: 40px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+  }
+
+  .card-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 8px;
+  }
+  .card-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+  }
+  .card-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 4px;
+  }
+
+  /* ── Section ─────────────────────────────────────────────────────────────── */
+  .section {
+    margin-bottom: 100px;
+  }
+  .section-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    display: block;
+    height: 1px;
+    width: 40px;
+    background: var(--accent);
+    opacity: 0.4;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+    color: #fff;
+  }
+  .section-body {
+    font-size: 19px;
+    color: var(--muted);
+    max-width: 580px;
+    font-weight: 300;
+  }
+
+  /* ── Controls panel ──────────────────────────────────────────────────────── */
+  .controls-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+  @media (max-width: 700px) {
+    .controls-wrap { grid-template-columns: 1fr; }
+    .glass-row { gap: 16px; }
+    .glass-card { width: 160px; height: 200px; }
+  }
+
+  .controls-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+  }
+  .controls-panel h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+
+  .ctrl {
+    margin-bottom: 24px;
+  }
+  .ctrl-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .ctrl-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.65);
+    letter-spacing: 0.05em;
+  }
+  .ctrl-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    min-width: 40px;
+    text-align: right;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 2px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid rgba(0,0,0,0.3);
+    box-shadow: 0 0 10px rgba(123,108,255,0.6);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 16px rgba(123,108,255,0.9);
+  }
+
+  /* ── Live target card ────────────────────────────────────────────────────── */
+  .live-card {
+    --wg-render: true;
+    --wg-shape: squircle;
+    --wg-refraction: 1.5;
+    --wg-scale: 0.22;
+    --wg-bezel: 0.28;
+    --wg-blur: 0.003;
+    --wg-corner-radius: 0.18;
+    --wg-fresnel: 0.65;
+    --wg-light-angle: -50;
+    --wg-specular-strength: 0.70;
+    --wg-specular-width: 0.20;
+    --wg-specular-edge: 0.04;
+    --wg-specular-back: 0.20;
+    --wg-bg-opacity: 0.10;
+    --wg-capture-interval: 60;
+
+    width: 100%;
+    min-height: 320px;
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.10);
+    padding: 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .live-card .big-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 72px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    margin-bottom: 8px;
+  }
+  .live-card .sub-text {
+    font-size: 15px;
+    color: rgba(255,255,255,0.45);
+    font-style: italic;
+  }
+
+  /* ── Shape buttons ───────────────────────────────────────────────────────── */
+  .shape-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .shape-btn {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .shape-btn:hover, .shape-btn.active {
+    border-color: rgba(123,108,255,0.6);
+    color: #fff;
+    background: rgba(123,108,255,0.12);
+  }
+
+  /* ── Showcase grid ───────────────────────────────────────────────────────── */
+  .showcase-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 40px;
+  }
+  @media (max-width: 700px) { .showcase-grid { grid-template-columns: 1fr 1fr; } }
+
+  .showcase-item {
+    --wg-render: true;
+    --wg-capture-interval: 999999;
+    aspect-ratio: 1;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: default;
+    transition: transform 0.25s cubic-bezier(.22,1,.36,1);
+  }
+  .showcase-item:hover { transform: scale(1.03); }
+
+  .showcase-item.s1 { --wg-shape: squircle; --wg-corner-radius: 0.12; }
+  .showcase-item.s2 { --wg-shape: circle;   --wg-corner-radius: 0.50; }
+  .showcase-item.s3 { --wg-shape: concave;  --wg-corner-radius: 0.20; }
+  .showcase-item.s4 { --wg-shape: lip;      --wg-corner-radius: 0.30; }
+  .showcase-item.s5 { --wg-shape: squircle; --wg-refraction: 2.0; --wg-corner-radius: 0.06; }
+  .showcase-item.s6 { --wg-shape: circle;   --wg-blur: 0.012; --wg-corner-radius: 0.50; }
+
+  .si-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+  }
+  .si-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 9px;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Footer ──────────────────────────────────────────────────────────────── */
+  .footer {
+    text-align: center;
+    padding: 60px 0 40px;
+    border-top: 1px solid var(--border);
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+  }
+
+  /* ── Noise grain ─────────────────────────────────────────────────────────── */
+  .grain {
+    position: fixed;
+    inset: -50%;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    animation: grain-shift 0.5s steps(1) infinite;
+  }
+  @keyframes grain-shift {
+    0%   { transform: translate(0,0); }
+    25%  { transform: translate(-2%, -3%); }
+    50%  { transform: translate(3%, 2%); }
+    75%  { transform: translate(-1%, 4%); }
+    100% { transform: translate(2%, -1%); }
+  }
+
+  /* ── Fade in ─────────────────────────────────────────────────────────────── */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(24px);
+    animation: fadeUp 0.7s cubic-bezier(.22,1,.36,1) forwards;
+  }
+  @keyframes fadeUp {
+    to { opacity: 1; transform: none; }
+  }
+  .d1 { animation-delay: 0.1s; }
+  .d2 { animation-delay: 0.2s; }
+  .d3 { animation-delay: 0.35s; }
+  .d4 { animation-delay: 0.5s; }
+  .d5 { animation-delay: 0.65s; }
+</style>
+</head>
+<body>
+
+<!-- Atmosphere -->
+<div class="scene">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="orb orb-4"></div>
+  <div class="orb orb-5"></div>
+</div>
+<div class="grid-bg"></div>
+<div class="grain"></div>
+
+<div class="content">
+
+  <!-- Hero -->
+  <section class="hero">
+    <p class="hero-eyebrow fade-up d1">WebGL2 · Physically-based · Zero dependencies</p>
+    <h1 class="hero-title fade-up d2">Web<em>Glass</em></h1>
+    <p class="hero-sub fade-up d3">Liquid lens refraction for any DOM element. Real background. Real physics.</p>
+
+    <!-- Glass cards row -->
+    <div class="glass-row fade-up d4">
+      <div class="glass-card">
+        <div class="card-label">Refraction</div>
+        <div class="card-value">1.45</div>
+        <div class="card-sub">index of refraction</div>
+      </div>
+      <div class="glass-card circle-shape">
+        <div style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:#fff">∞</div>
+        <div class="card-sub" style="margin-top:6px">shapes</div>
+      </div>
+      <div class="glass-card concave-shape">
+        <div class="card-label">Fresnel</div>
+        <div class="card-value">0.60</div>
+        <div class="card-sub">edge reflection</div>
+      </div>
+      <div class="glass-card" style="--wg-shape:lip;--wg-refraction:1.7">
+        <div class="card-label">Blur</div>
+        <div class="card-value">0.004</div>
+        <div class="card-sub">frosted depth</div>
+      </div>
+    </div>
+
+    <!-- pill -->
+    <div style="display:flex;justify-content:center" class="fade-up d5">
+      <div class="glass-card pill-shape">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:rgba(255,255,255,0.7)">WebGL2 · html2canvas · CSS API</div>
+        <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.35)">v1.2.0</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live controls -->
+  <section class="section">
+    <div class="section-label">Interactive</div>
+    <h2 class="section-title">Live Controls</h2>
+    <p class="section-body">Drag any slider and watch the refraction update in real time at the next capture interval.</p>
+
+    <div style="height:40px"></div>
+
+    <div class="controls-wrap">
+      <!-- Live card -->
+      <div class="live-card" id="liveCard">
+        <div class="big-num" id="refrDisplay">1.50</div>
+        <div class="sub-text">index of refraction — drag the sliders →</div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls-panel">
+        <h3>Glass Parameters</h3>
+
+        <div class="shape-btns">
+          <button class="shape-btn active" data-shape="squircle">Squircle</button>
+          <button class="shape-btn" data-shape="circle">Circle</button>
+          <button class="shape-btn" data-shape="lip">Lip</button>
+          <button class="shape-btn" data-shape="concave">Concave</button>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-name">Refraction</span>
+            <span class="ctrl-val" id="v-ior">1.50</span>
+          </div>
+          <input type="range" id="r-ior" min="1.0" max="2.5" step="0.01" value="1.50">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-name">Scale</span>
+            <span class="ctrl-val" id="v-scale">0.22</span>
+          </div>
+          <input type="range" id="r-scale" min="0.0" max="0.6" step="0.01" value="0.22">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-name">Bezel</span>
+            <span class="ctrl-val" id="v-bezel">0.28</span>
+          </div>
+          <input type="range" id="r-bezel" min="0.0" max="0.6" step="0.01" value="0.28">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-name">Blur</span>
+            <span class="ctrl-val" id="v-blur">0.003</span>
+          </div>
+          <input type="range" id="r-blur" min="0.0" max="0.02" step="0.001" value="0.003">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-name">Fresnel</span>
+            <span class="ctrl-val" id="v-fresnel">0.65</span>
+          </div>
+          <input type="range" id="r-fresnel" min="0.0" max="1.0" step="0.01" value="0.65">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-name">Light Angle</span>
+            <span class="ctrl-val" id="v-angle">-50°</span>
+          </div>
+          <input type="range" id="r-angle" min="-180" max="180" step="1" value="-50">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-header">
+            <span class="ctrl-name">Corner Radius</span>
+            <span class="ctrl-val" id="v-corner">0.18</span>
+          </div>
+          <input type="range" id="r-corner" min="0.0" max="0.5" step="0.01" value="0.18">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Shape showcase -->
+  <section class="section">
+    <div class="section-label">Shapes</div>
+    <h2 class="section-title">All Four Profiles</h2>
+    <p class="section-body">Each shape drives a different height field through the lens equation — from convex squircle to inward concave.</p>
+
+    <div class="showcase-grid">
+      <div class="showcase-item s1">
+        <div class="si-name">Squircle</div>
+        <div class="si-val">ior 1.45 · r 0.12</div>
+      </div>
+      <div class="showcase-item s2">
+        <div class="si-name">Circle</div>
+        <div class="si-val">ior 1.45 · r 0.50</div>
+      </div>
+      <div class="showcase-item s3">
+        <div class="si-name">Concave</div>
+        <div class="si-val">ior 1.45 · r 0.20</div>
+      </div>
+      <div class="showcase-item s4">
+        <div class="si-name">Lip</div>
+        <div class="si-val">ior 1.45 · r 0.30</div>
+      </div>
+      <div class="showcase-item s5">
+        <div class="si-name">High IOR</div>
+        <div class="si-val">ior 2.0 · sharp</div>
+      </div>
+      <div class="showcase-item s6">
+        <div class="si-name">Frosted</div>
+        <div class="si-val">blur 0.012</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CSS API section -->
+  <section class="section">
+    <div class="section-label">API</div>
+    <h2 class="section-title">CSS-Driven</h2>
+    <p class="section-body">Drop a single CSS custom property on any element. Children inherit glass settings from their parent via the cascade.</p>
+
+    <div style="height:32px"></div>
+
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:28px 32px;font-family:monospace;font-size:14px;line-height:1.9;overflow-x:auto">
+      <span style="color:#7b6cff">.card</span> {<br>
+      &nbsp;&nbsp;<span style="color:#4ecdc4">--wg-render</span><span style="color:#fff">:</span> <span style="color:#ffd93d">true</span>;<br>
+      &nbsp;&nbsp;<span style="color:#4ecdc4">--wg-shape</span><span style="color:#fff">:</span> <span style="color:#ffd93d">squircle</span>;<br>
+      &nbsp;&nbsp;<span style="color:#4ecdc4">--wg-refraction</span><span style="color:#fff">:</span> <span style="color:#ff6b6b">1.6</span>;<br>
+      &nbsp;&nbsp;<span style="color:#4ecdc4">--wg-scale</span><span style="color:#fff">:</span> <span style="color:#ff6b6b">0.22</span>;<br>
+      &nbsp;&nbsp;<span style="color:#4ecdc4">--wg-blur</span><span style="color:#fff">:</span> <span style="color:#ff6b6b">0.005</span>;<br>
+      }<br>
+    </div>
+  </section>
+
+  <footer class="footer">WebGlass v1.2.0 &mdash; WebGL2 · html2canvas &mdash; Per-element background capture</footer>
+</div>
+
+<script>
+// ── Inline webglass.js ───────────────────────────────────────────────────────
+</script>
+<script src="webglass.js"></script>
+<script>
+// ── Live controls ────────────────────────────────────────────────────────────
+(function () {
+  const card = document.getElementById('liveCard');
+  const refrDisplay = document.getElementById('refrDisplay');
+
+  const sliders = {
+    ior:     { el: document.getElementById('r-ior'),     val: document.getElementById('v-ior'),     prop: '--wg-refraction',    fmt: v => v.toFixed(2) },
+    scale:   { el: document.getElementById('r-scale'),   val: document.getElementById('v-scale'),   prop: '--wg-scale',         fmt: v => v.toFixed(2) },
+    bezel:   { el: document.getElementById('r-bezel'),   val: document.getElementById('v-bezel'),   prop: '--wg-bezel',         fmt: v => v.toFixed(2) },
+    blur:    { el: document.getElementById('r-blur'),    val: document.getElementById('v-blur'),    prop: '--wg-blur',          fmt: v => v.toFixed(3) },
+    fresnel: { el: document.getElementById('r-fresnel'), val: document.getElementById('v-fresnel'), prop: '--wg-fresnel',       fmt: v => v.toFixed(2) },
+    angle:   { el: document.getElementById('r-angle'),   val: document.getElementById('v-angle'),   prop: '--wg-light-angle',   fmt: v => v.toFixed(0) + '°' },
+    corner:  { el: document.getElementById('r-corner'),  val: document.getElementById('v-corner'),  prop: '--wg-corner-radius', fmt: v => v.toFixed(2) },
+  };
+
+  Object.values(sliders).forEach(({ el, val, prop, fmt }) => {
+    el.addEventListener('input', () => {
+      const v = parseFloat(el.value);
+      val.textContent = fmt(v);
+      card.style.setProperty(prop, v);
+      if (prop === '--wg-refraction') refrDisplay.textContent = v.toFixed(2);
+    });
+  });
+
+  // Shape buttons
+  document.querySelectorAll('.shape-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      card.style.setProperty('--wg-shape', btn.dataset.shape);
+    });
+  });
+})();
+</script>
+</body>
+</html>
