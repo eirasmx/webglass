@@ -1,0 +1,47 @@
+{
+  "name": "webglass",
+  "version": "1.0.0",
+  "description": "Liquid Glass for the Web — Snell–Descartes refraction, SDF-accurate bezels, and specular rim lighting rendered entirely in CSS backdrop-filter and SVG. No canvas at runtime, no dependencies.",
+  "main": "webglass.js",
+  "style": "webglass.css",
+  "files": [
+    "webglass.js",
+    "webglass.css",
+    "docs/",
+    "examples/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "glass",
+    "liquid-glass",
+    "glassmorphism",
+    "refraction",
+    "backdrop-filter",
+    "css",
+    "svg",
+    "ui",
+    "design",
+    "specular",
+    "bezel",
+    "ios"
+  ],
+  "author": {
+    "name": "Eramsus A. Junior",
+    "email": "eirasmx@duck.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eirasmx/webglass"
+  },
+  "homepage": "https://github.com/eirasmx/webglass#readme",
+  "bugs": {
+    "url": "https://github.com/eirasmx/webglass/issues"
+  },
+  "sideEffects": [
+    "webglass.js",
+    "webglass.css"
+  ]
+}
