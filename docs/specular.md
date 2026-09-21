@@ -30,7 +30,7 @@ Imagine a light source at a fixed position in the scene. The rim of the glass el
 
 Angle of the light source in degrees. `0` = right, `-90` = top, `90` = bottom, `180` = left.
 
-The default `-55` puts the light at the upper-left, which matches the conventional light direction in most design systems.
+The default `-55` puts the light at the upper-right, which matches the conventional light direction in most design systems.
 
 ```css
 --wg-light-angle: -55;   /* Default — upper left */
