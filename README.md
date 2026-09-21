@@ -1,6 +1,6 @@
 # 🪟 WebGlass
 
-Liquid Glass for the Web. Snell–Descartes refraction, SDF-accurate bezels, and specular rim lighting — rendered entirely in CSS `backdrop-filter` and SVG. No canvas at runtime, no dependencies.
+Liquid Glass for the Web. Snell–Descartes refraction, SDF-accurate bezels, and specular rim lighting rendered entirely in CSS `backdrop-filter` and SVG. No canvas at runtime, no dependencies.
 
 ---
 
