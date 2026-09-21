@@ -33,7 +33,7 @@ Full guides are in the [`docs/`](./docs) folder:
 |---|---|
 | [🚀 Getting Started](./docs/getting-started.md) | Installation, first element, style scoping |
 | [🪙 Tokens Reference](./docs/tokens.md) | Every CSS custom property with examples |
-| [🔷 Shapes](./docs/shapes.md) | squircle, circle, lip, concave — when to use each |
+| [🔷 Shapes](./docs/shapes.md) | squircle, circle, lip, concave when to use each |
 | [✨ Specular Lighting](./docs/specular.md) | Light angle, highlights, iOS look, soft glow |
 | [🧠 JS API](./docs/js-api.md) | `apply`, `configure`, `refresh`, `destroy` |
 
